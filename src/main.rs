@@ -23,6 +23,7 @@ use rust_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 
 #[group]
 #[commands(ping)]
+#[commands(register)]
 struct General;
 
 struct Handler;
@@ -67,9 +68,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         channel2: 456, // Replace with the actual ChannelID
     };
 
-    diesel::insert_into(channel_pairs::table())
+    let result = diesel::insert_into(channel_pairs::table())
         .values(&new_pair)
         .execute(connection);
+    println!("{:?}", result);
 
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
@@ -95,5 +97,79 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "Pong!").await?;
+    Ok(())
+}
+
+#[command]
+async fn register(ctx: &Context, msg: &Message) -> CommandResult {
+    let connection = &mut establish_connection();
+
+    // Extract the text content of the message
+    let mut iter = msg.content.split_whitespace();
+    let _ = iter.next(); // Skip the command (~register)
+
+    // Get the second element (Channel ID)
+    let channel_id_str = iter.next();
+
+    // Declare channel2 outside the block
+    let channel2: i64;
+
+    // Get the second element (Channel ID)
+    if let Some(channel_id_str) = channel_id_str {
+        // Attempt to parse the text as an i64 (replace with the actual parsing logic)
+        channel2 = match channel_id_str.parse() {
+            Ok(id) => id,
+            Err(_) => {
+                msg.reply(ctx, "Invalid ChannelID format").await?;
+                return Ok(());
+            }
+        };
+    } else {
+        msg.reply(ctx, "Invalid ~register command format").await?;
+        return Ok(());
+    }
+
+    // Check if a Channel ID is provided
+    if let Some(channel_id_str) = channel_id_str {
+        // Attempt to parse the text as an i64 (replace with the actual parsing logic)
+        let channel2: i64 = match channel_id_str.parse() {
+            Ok(id) => id,
+            Err(_) => {
+                msg.reply(ctx, "Invalid ChannelID format").await?;
+                return Ok(());
+            }
+        };
+    } else {
+        msg.reply(ctx, "Invalid ~register command format").await?;
+        return Ok(());
+    }
+
+    // Get the ID of the channel where the message was sent
+    let channel1 = *msg.channel_id.as_u64() as i64;
+
+    // Create a new ChannelPair instance
+    let new_pair = ChannelPair {
+        id: None, // Omitting the id because it's auto-incremented
+        channel1,
+        channel2,
+    };
+
+    // Assuming you have a Diesel connection named "connection" available
+    use diesel::prelude::*;
+    use rust_bridgebot::schema::channel_pairs; // Replace with the actual module path to your schema
+
+    let result = diesel::insert_into(channel_pairs::table)
+        .values(&new_pair)
+        .execute(connection);
+
+    match result {
+        Ok(_) => {
+            msg.reply(ctx, "Registration successful").await?;
+        }
+        Err(_) => {
+            msg.reply(ctx, "Error registering the ChannelID").await?;
+        }
+    }
+
     Ok(())
 }
