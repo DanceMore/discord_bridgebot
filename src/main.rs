@@ -1,10 +1,11 @@
 use dotenv::dotenv;
+use std::env;
+use tokio;
 
 use serenity::client::{Context, EventHandler};
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::CommandResult;
 use serenity::framework::standard::StandardFramework;
-use serenity::http::CacheHttp;
 use serenity::model::gateway::Ready;
 use serenity::Client;
 
@@ -12,9 +13,13 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 
-use std::env;
+use diesel::associations::HasTable;
+use diesel::RunQueryDsl;
+use diesel::SelectableHelper;
 
-use tokio;
+use rust_bridgebot::establish_connection;
+use rust_bridgebot::models::*;
+use rust_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 
 #[group]
 #[commands(ping)]
@@ -47,11 +52,24 @@ impl EventHandler for Handler {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[-] hello, world, from Rust BridgeBot.");
     println!("[-] loading config from ENV...");
     dotenv().ok();
     println!("[+] config loaded!");
+
+    let connection = &mut establish_connection();
+    //println!("{:?}", connection);
+
+    let new_pair = ChannelPair {
+        id: None,
+        channel1: 123, // Replace with the actual ChannelID
+        channel2: 456, // Replace with the actual ChannelID
+    };
+
+    diesel::insert_into(channel_pairs::table())
+        .values(&new_pair)
+        .execute(connection);
 
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
@@ -70,6 +88,8 @@ async fn main() {
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
     }
+
+    Ok(())
 }
 
 #[command]
