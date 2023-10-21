@@ -22,8 +22,7 @@ use rust_bridgebot::models::*;
 use rust_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 
 #[group]
-#[commands(ping)]
-#[commands(register)]
+#[commands(ping, getcurrentid, register)]
 struct General;
 
 struct Handler;
@@ -74,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{:?}", result);
 
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
+        .configure(|c| c.prefix("!")) // set the bot's prefix to "!"
         .group(&GENERAL_GROUP);
 
     // Login with a bot token from the environment
@@ -96,7 +95,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
+    println!("[-] someone pinged me, ponging...");
     msg.reply(ctx, "Pong!").await?;
+    Ok(())
+}
+
+#[command]
+async fn getcurrentid(ctx: &Context, msg: &Message) -> CommandResult {
+    println!("[-] current channel ID has been requested.");
+    // Get the Channel ID of the message
+    let channel_id = msg.channel_id;
+
+    // Reply with the Channel ID
+    msg.reply(
+        ctx,
+        format!("The `ChannelID` of this channel is: `{}`", channel_id),
+    )
+    .await?;
+
     Ok(())
 }
 
