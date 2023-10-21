@@ -1,17 +1,18 @@
 use dotenv::dotenv;
 
-use std::convert::TryInto;
+use serenity::client::{Context, EventHandler};
+use serenity::framework::standard::StandardFramework;
+use serenity::framework::standard::CommandResult;
+use serenity::framework::standard::macros::{group, command};
+use serenity::Client;
+use serenity::http::CacheHttp;
+use serenity::model::gateway::Ready;
 
-use chrono::{DateTime, Utc, NaiveDate, NaiveTime, NaiveDateTime};
 
 use serenity::async_trait;
 use serenity::prelude::*;
 use serenity::model::channel::Message;
-//use serenity::model::prelude::ChannelId;
-use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::{StandardFramework, CommandResult};
 
-//use std::{collections::HashMap, env};
 use std::env;
 
 use tokio;
@@ -23,11 +24,38 @@ struct General;
 struct Handler;
 
 #[async_trait]
-impl EventHandler for Handler {}
+impl EventHandler for Handler {
+    async fn message(&self, ctx: Context, msg: Message) {
+        println!("I saw a message.");
+	println!("{:?}", msg);
+        // Your custom logic goes here to determine when to execute a command.
+
+	// fast-fail to prevent spamming / looping
+    if msg.author.bot {
+        return;
+    }
+
+        if !msg.author.bot {
+           // if let Err(why) = ctx.with_framework(|f| f.dispatch(ctx, &msg)) {
+           //     println!("Error when dispatching command: {:?}", why);
+           // }
+        }
+    }
+
+    async fn ready(&self, _: Context, ready: Ready) {
+        println!("Bot is ready as {}!", ready.user.name);
+    }
+}
+
 
 #[tokio::main]
 async fn main() {
+	println!("[-] hello, world, from Rust BridgeBot.");
+	println!("[-] loading config from ENV...");
     dotenv().ok();
+	println!("[+] config loaded!");
+
+
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .group(&GENERAL_GROUP);
