@@ -39,7 +39,7 @@ impl EventHandler for Handler {
         }
 
         let channel_id = msg.channel_id;
-        debug!(
+        info!(
             "[-] message spotted by EventHandler inside channel {}",
             channel_id
         );
@@ -95,7 +95,7 @@ impl EventHandler for Handler {
 fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result::Error> {
     let connection = &mut establish_connection();
 
-    println!("[-] db query for channel id {}", channel_id);
+    debug!("[-] db query for channel id {}", channel_id);
     use rust_bridgebot::schema::channel_pairs::dsl::*;
 
     // this works
@@ -104,12 +104,9 @@ fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result:
         .filter(channel1.eq(channel_id))
         .load::<(i64, i64)>(connection); // Change to the appropriate types
 
-    // Use std::any::type_name to print the type of the results
-    println!("Type of results: {:?}", results);
-
-    for result in &results {
-        println!("{:?}", result);
-    }
+    //for result in &results {
+    //    debug!("{:?}", result);
+    //}
 
     results
 
@@ -122,6 +119,7 @@ fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result:
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
     debug!("[-] hello, world, from Rust BridgeBot.");
     debug!("[-] loading config from ENV...");
     dotenv().ok();
