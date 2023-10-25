@@ -23,6 +23,7 @@ use diesel::RunQueryDsl;
 use diesel::SelectableHelper;
 
 use serenity::model::prelude::ChannelId;
+use serenity::utils::MessageBuilder;
 
 use rust_bridgebot::establish_connection;
 use rust_bridgebot::models::*;
@@ -37,21 +38,58 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        println!("[-] message spotted by EventHandler");
-
         // fast-fail to prevent spamming / looping
         if msg.author.bot {
             return;
         }
 
-        // let connection = &mut establish_connection();
+        let channel_id = msg.channel_id;
+        println!(
+            "[-] message spotted by EventHandler inside channel {}",
+            channel_id
+        );
 
-        // let channel_id = msg.channel_id;
+        // Assuming msg.content contains the message
+        let message = &msg.content;
+        let author = &msg.author.name;
 
-        // let results = channel_pairs
-        //     .select((channel1, channel2)) // Select the columns you need
-        //     .filter(channel1.eq(channel_id))
-        //     .load::<(i64, i64)>(connection); // Change to the appropriate types
+        // Take the first 16 characters
+        let message_part = message.chars().take(16).collect::<String>();
+        let author_part = author.chars().take(8).collect::<String>();
+
+        // Pad the message_part with spaces to ensure alignment
+        let padded_message = format!("{:<16}", message_part);
+        let padded_author = format!("{:<8}", author_part);
+
+        // Check if the message was truncated and add "..." if necessary
+        let mut padded_message = format!("{:<16}", message_part);
+        if message.len() > 16 {
+            padded_message.pop(); // Remove the last space
+            padded_message.push_str("..."); // Add "..."
+        }
+
+        let results = get_channel_pairs(channel_id.into());
+
+        if let Ok(pairs) = results {
+            if pairs.is_empty() {
+                // Do no work, results are empty
+                println!(
+                    "[-] No pairs found for channelID {}, do no work.",
+                    channel_id
+                );
+                return;
+            }
+
+            for pair in &pairs {
+                println!(
+                    "[!] would mirror \"{}: {}\" to channel id {}",
+                    padded_author, padded_message, pair.1
+                );
+                mirror_message(&ctx, pair.1, author, message).await;
+            }
+        } else {
+            println!("[-] Error while querying the database.");
+        }
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
@@ -60,21 +98,28 @@ impl EventHandler for Handler {
 }
 
 //fn get_channel_pairs(channel_id: i64) -> Result<Vec<ChannelPair>, Box<dyn std::error::Error>> {
-fn get_channel_pairs(channel_id: i64) {
+fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result::Error> {
     let connection = &mut establish_connection();
 
     println!("[-] db query for channel id {}", channel_id);
     use rust_bridgebot::schema::channel_pairs::dsl::*;
 
+    // this works
     let results = channel_pairs
         .select((channel1, channel2)) // Select the columns you need
         .filter(channel1.eq(channel_id))
         .load::<(i64, i64)>(connection); // Change to the appropriate types
 
+    // Use std::any::type_name to print the type of the results
+    println!("Type of results: {:?}", results);
+
     for result in &results {
         println!("{:?}", result);
     }
 
+    results
+
+    // this becomes scoping / type mismatch madness
     // let results = channel_pairs
     //     .select((channel1, channel2)) // Select the columns you need
     //     .filter(channel1.eq(channel_id))
@@ -90,17 +135,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let connection = &mut establish_connection();
     //println!("{:?}", connection);
-
-    let new_pair = ChannelPair {
-        id: None,
-        channel1: 123, // Replace with the actual ChannelID
-        channel2: 456, // Replace with the actual ChannelID
-    };
-
-    let result = diesel::insert_into(channel_pairs::table())
-        .values(&new_pair)
-        .execute(connection);
-    println!("{:?}", result);
 
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("!")) // set the bot's prefix to "!"
@@ -126,23 +160,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     println!("[-] someone pinged me, ponging...");
-
     let channel_id = msg.channel_id;
 
-    get_channel_pairs(channel_id.into());
+    let _ = get_channel_pairs(channel_id.into());
 
     msg.reply(ctx, "Pong!").await?;
-
     Ok(())
 }
 
 #[command]
 async fn getcurrentid(ctx: &Context, msg: &Message) -> CommandResult {
     println!("[-] current channel ID has been requested.");
-    // Get the Channel ID of the message
     let channel_id = msg.channel_id;
 
-    // Reply with the Channel ID
     msg.reply(
         ctx,
         format!("The `ChannelID` of this channel is: `{}`", channel_id),
@@ -154,11 +184,14 @@ async fn getcurrentid(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn register(ctx: &Context, msg: &Message) -> CommandResult {
+    // it seems like limiting the scope of the imports is important?
+    // I can definitely break code with name-conflicts by putting this at the top....
+    use rust_bridgebot::schema::channel_pairs;
     let connection = &mut establish_connection();
 
     // Extract the text content of the message
     let mut iter = msg.content.split_whitespace();
-    let _ = iter.next(); // Skip the command (~register)
+    let _ = iter.next(); // Skip the command (!register)
 
     // Get the second element (Channel ID)
     let channel_id_str = iter.next();
@@ -166,9 +199,9 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
     // Declare channel2 outside the block
     let channel2: i64;
 
-    // Get the second element (Channel ID)
+    // check that we have a Channel ID
     if let Some(channel_id_str) = channel_id_str {
-        // Attempt to parse the text as an i64 (replace with the actual parsing logic)
+        // Attempt to parse the text as an i64
         channel2 = match channel_id_str.parse() {
             Ok(id) => id,
             Err(_) => {
@@ -177,7 +210,7 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
             }
         };
     } else {
-        msg.reply(ctx, "Invalid ~register command format").await?;
+        msg.reply(ctx, "Invalid register command format").await?;
         return Ok(());
     }
 
@@ -187,15 +220,12 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
     // make sure we can see the channel target...
     match ctx.http.get_channel(channel2 as u64).await {
         Ok(channel) => {
-            println!("true");
-            // Create a new ChannelPair instance
+            // alright, since we're here, let's create and save the channel to datbase.
             let new_pair = ChannelPair {
                 id: None, // Omitting the id because it's auto-incremented
                 channel1,
                 channel2,
             };
-
-            use rust_bridgebot::schema::channel_pairs; // Replace with the actual module path to your schema
 
             let result = diesel::insert_into(channel_pairs::table)
                 .values(&new_pair)
@@ -220,4 +250,19 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     Ok(())
+}
+
+async fn mirror_message(
+    ctx: &Context,
+    channel_id: i64,
+    custom_username: &str,
+    message_content: &str,
+) {
+    let channel = serenity::model::id::ChannelId(channel_id as u64);
+
+    let message = format!("🔊 {}: {}", custom_username, message_content);
+
+    if let Err(why) = channel.say(&ctx.http, message).await {
+        eprintln!("Error sending message: {:?}", why);
+    }
 }
