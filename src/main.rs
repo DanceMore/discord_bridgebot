@@ -14,8 +14,15 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 use diesel::associations::HasTable;
+use diesel::prelude::*;
+use diesel::ExpressionMethods;
+use diesel::OptionalExtension;
+use diesel::QueryDsl;
+use diesel::QueryResult;
 use diesel::RunQueryDsl;
 use diesel::SelectableHelper;
+
+use serenity::model::prelude::ChannelId;
 
 use rust_bridgebot::establish_connection;
 use rust_bridgebot::models::*;
@@ -30,20 +37,21 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        println!("I saw a message.");
-        println!("{:?}", msg);
-        // Your custom logic goes here to determine when to execute a command.
+        println!("[-] message spotted by EventHandler");
 
         // fast-fail to prevent spamming / looping
         if msg.author.bot {
             return;
         }
 
-        if !msg.author.bot {
-            // if let Err(why) = ctx.with_framework(|f| f.dispatch(ctx, &msg)) {
-            //     println!("Error when dispatching command: {:?}", why);
-            // }
-        }
+        // let connection = &mut establish_connection();
+
+        // let channel_id = msg.channel_id;
+
+        // let results = channel_pairs
+        //     .select((channel1, channel2)) // Select the columns you need
+        //     .filter(channel1.eq(channel_id))
+        //     .load::<(i64, i64)>(connection); // Change to the appropriate types
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
@@ -145,45 +153,41 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    // Check if a Channel ID is provided
-    if let Some(channel_id_str) = channel_id_str {
-        // Attempt to parse the text as an i64 (replace with the actual parsing logic)
-        let channel2: i64 = match channel_id_str.parse() {
-            Ok(id) => id,
-            Err(_) => {
-                msg.reply(ctx, "Invalid ChannelID format").await?;
-                return Ok(());
-            }
-        };
-    } else {
-        msg.reply(ctx, "Invalid ~register command format").await?;
-        return Ok(());
-    }
-
     // Get the ID of the channel where the message was sent
     let channel1 = *msg.channel_id.as_u64() as i64;
 
-    // Create a new ChannelPair instance
-    let new_pair = ChannelPair {
-        id: None, // Omitting the id because it's auto-incremented
-        channel1,
-        channel2,
-    };
+    // make sure we can see the channel target...
+    match ctx.http.get_channel(channel2 as u64).await {
+        Ok(channel) => {
+            println!("true");
+            // Create a new ChannelPair instance
+            let new_pair = ChannelPair {
+                id: None, // Omitting the id because it's auto-incremented
+                channel1,
+                channel2,
+            };
 
-    // Assuming you have a Diesel connection named "connection" available
-    use diesel::prelude::*;
-    use rust_bridgebot::schema::channel_pairs; // Replace with the actual module path to your schema
+            use rust_bridgebot::schema::channel_pairs; // Replace with the actual module path to your schema
 
-    let result = diesel::insert_into(channel_pairs::table)
-        .values(&new_pair)
-        .execute(connection);
+            let result = diesel::insert_into(channel_pairs::table)
+                .values(&new_pair)
+                .execute(connection);
 
-    match result {
-        Ok(_) => {
-            msg.reply(ctx, "Registration successful").await?;
+            match result {
+                Ok(_) => {
+                    msg.reply(ctx, "Registration successful").await?;
+                }
+                Err(_) => {
+                    msg.reply(ctx, "Error registering the ChannelID").await?;
+                }
+            }
         }
         Err(_) => {
-            msg.reply(ctx, "Error registering the ChannelID").await?;
+            msg.reply(
+                ctx,
+                format!("I don't think I can see ChannelID `{}`", channel2),
+            )
+            .await?;
         }
     }
 

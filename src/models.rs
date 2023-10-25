@@ -1,5 +1,6 @@
 use crate::schema::channel_pairs;
 use diesel::prelude::*;
+use diesel::Queryable;
 
 #[diesel(table_name = channel_pairs)]
 #[derive(Queryable, Selectable, Insertable, Debug)]
