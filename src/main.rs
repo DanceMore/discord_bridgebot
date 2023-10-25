@@ -59,6 +59,28 @@ impl EventHandler for Handler {
     }
 }
 
+//fn get_channel_pairs(channel_id: i64) -> Result<Vec<ChannelPair>, Box<dyn std::error::Error>> {
+fn get_channel_pairs(channel_id: i64) {
+    let connection = &mut establish_connection();
+
+    println!("[-] db query for channel id {}", channel_id);
+    use rust_bridgebot::schema::channel_pairs::dsl::*;
+
+    let results = channel_pairs
+        .select((channel1, channel2)) // Select the columns you need
+        .filter(channel1.eq(channel_id))
+        .load::<(i64, i64)>(connection); // Change to the appropriate types
+
+    for result in &results {
+        println!("{:?}", result);
+    }
+
+    // let results = channel_pairs
+    //     .select((channel1, channel2)) // Select the columns you need
+    //     .filter(channel1.eq(channel_id))
+    //     .load::<ChannelPair>(&mut connection)?;
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[-] hello, world, from Rust BridgeBot.");
@@ -104,7 +126,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     println!("[-] someone pinged me, ponging...");
+
+    let channel_id = msg.channel_id;
+
+    get_channel_pairs(channel_id.into());
+
     msg.reply(ctx, "Pong!").await?;
+
     Ok(())
 }
 
