@@ -1,0 +1,19 @@
+version: '2.4'
+
+services:
+  db:
+    image: docker.io/postgres:15.3-alpine
+    environment:
+      - POSTGRES_DB=bridgebot
+      - POSTGRES_USER=bridgebot
+      #- POSTGRES_PASSWORD=.env
+    volumes:
+      - /srv/docker/bridgebot_db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+    restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 128m
+    memswap_limit: 128m
+    mem_reservation: 128m
