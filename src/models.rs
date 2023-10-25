@@ -1,9 +1,10 @@
 use crate::schema::channel_pairs;
 use diesel::prelude::*;
 use diesel::Queryable;
+use diesel::Selectable;
 
-#[diesel(table_name = channel_pairs)]
 #[derive(Queryable, Selectable, Insertable, Debug)]
+#[diesel(table_name = channel_pairs)]
 pub struct ChannelPair {
     pub id: Option<i32>,
     pub channel1: i64,

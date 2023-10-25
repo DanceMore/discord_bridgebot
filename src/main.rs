@@ -13,21 +13,16 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 
-use diesel::associations::HasTable;
-use diesel::prelude::*;
 use diesel::ExpressionMethods;
-use diesel::OptionalExtension;
 use diesel::QueryDsl;
-use diesel::QueryResult;
 use diesel::RunQueryDsl;
-use diesel::SelectableHelper;
-
-use serenity::model::prelude::ChannelId;
-use serenity::utils::MessageBuilder;
 
 use rust_bridgebot::establish_connection;
 use rust_bridgebot::models::*;
-use rust_bridgebot::schema::channel_pairs::dsl::channel_pairs;
+
+extern crate env_logger;
+#[macro_use]
+extern crate log;
 
 #[group]
 #[commands(ping, getcurrentid, register)]
@@ -44,7 +39,7 @@ impl EventHandler for Handler {
         }
 
         let channel_id = msg.channel_id;
-        println!(
+        debug!(
             "[-] message spotted by EventHandler inside channel {}",
             channel_id
         );
@@ -57,10 +52,6 @@ impl EventHandler for Handler {
         let message_part = message.chars().take(16).collect::<String>();
         let author_part = author.chars().take(8).collect::<String>();
 
-        // Pad the message_part with spaces to ensure alignment
-        let padded_message = format!("{:<16}", message_part);
-        let padded_author = format!("{:<8}", author_part);
-
         // Check if the message was truncated and add "..." if necessary
         let mut padded_message = format!("{:<16}", message_part);
         if message.len() > 16 {
@@ -68,12 +59,15 @@ impl EventHandler for Handler {
             padded_message.push_str("..."); // Add "..."
         }
 
+        // Pad the message_part with spaces to ensure alignment
+        let padded_author = format!("{:<8}", author_part);
+
         let results = get_channel_pairs(channel_id.into());
 
         if let Ok(pairs) = results {
             if pairs.is_empty() {
                 // Do no work, results are empty
-                println!(
+                debug!(
                     "[-] No pairs found for channelID {}, do no work.",
                     channel_id
                 );
@@ -81,19 +75,19 @@ impl EventHandler for Handler {
             }
 
             for pair in &pairs {
-                println!(
+                debug!(
                     "[!] would mirror \"{}: {}\" to channel id {}",
                     padded_author, padded_message, pair.1
                 );
                 mirror_message(&ctx, pair.1, author, message).await;
             }
         } else {
-            println!("[-] Error while querying the database.");
+            eprintln!("[-] Error while querying the database.");
         }
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("Bot is ready as {}!", ready.user.name);
+        info!("Bot is ready as {}!", ready.user.name);
     }
 }
 
@@ -128,12 +122,13 @@ fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result:
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("[-] hello, world, from Rust BridgeBot.");
-    println!("[-] loading config from ENV...");
+    debug!("[-] hello, world, from Rust BridgeBot.");
+    debug!("[-] loading config from ENV...");
     dotenv().ok();
-    println!("[+] config loaded!");
+    debug!("[+] config loaded!");
 
-    let connection = &mut establish_connection();
+    // we don't actually pass this around ..?
+    //let connection = &mut establish_connection();
     //println!("{:?}", connection);
 
     let framework = StandardFramework::new()
@@ -219,7 +214,7 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
 
     // make sure we can see the channel target...
     match ctx.http.get_channel(channel2 as u64).await {
-        Ok(channel) => {
+        Ok(_channel) => {
             // alright, since we're here, let's create and save the channel to datbase.
             let new_pair = ChannelPair {
                 id: None, // Omitting the id because it's auto-incremented
