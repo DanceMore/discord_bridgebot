@@ -1,6 +1,9 @@
 use dotenv::dotenv;
 use std::env;
+use std::num::NonZeroU64;
 use tokio;
+
+use serenity::all::standard::Configuration;
 
 use serenity::client::{Context, EventHandler};
 use serenity::framework::standard::macros::{command, group};
@@ -130,8 +133,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //println!("{:?}", connection);
 
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix("!")) // set the bot's prefix to "!"
         .group(&GENERAL_GROUP);
+
+    framework.configure(
+        Configuration::new().with_whitespace(true)
+            .prefix("!")
+    );
 
     // Login with a bot token from the environment
     let token = env::var("DISCORD_TOKEN").expect("token");
@@ -208,16 +215,18 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     // Get the ID of the channel where the message was sent
-    let channel1 = *msg.channel_id.as_u64() as i64;
+    let channel1 = msg.channel_id;
+
+    let channel2_o = serenity::model::id::ChannelId::from( NonZeroU64::new(channel2 as u64).unwrap() );
 
     // make sure we can see the channel target...
-    match ctx.http.get_channel(channel2 as u64).await {
+    match ctx.http.get_channel(channel2_o).await {
         Ok(_channel) => {
             // alright, since we're here, let's create and save the channel to datbase.
             let new_pair = ChannelPair {
                 id: None, // Omitting the id because it's auto-incremented
-                channel1,
-                channel2,
+                channel1: channel1.into(),
+                channel2: channel2,
             };
 
             let result = diesel::insert_into(channel_pairs::table)
@@ -251,7 +260,7 @@ async fn mirror_message(
     custom_username: &str,
     message_content: &str,
 ) {
-    let channel = serenity::model::id::ChannelId(channel_id as u64);
+    let channel = serenity::model::id::ChannelId::from( NonZeroU64::new(channel_id as u64).unwrap() );
 
     let message = format!("🔊 {}: {}", custom_username, message_content);
 
