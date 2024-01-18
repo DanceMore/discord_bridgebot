@@ -8,6 +8,8 @@ RUN cargo build --release --package rust_bridgebot
 # Create a new lightweight image with just the binary
 FROM debian:bookworm-slim
 
+RUN apt update && apt install -y libpq5
+
 # Set the working directory inside the container
 WORKDIR /app
 
