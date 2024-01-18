@@ -20,8 +20,17 @@ use diesel::ExpressionMethods;
 use diesel::QueryDsl;
 use diesel::RunQueryDsl;
 
-use rust_bridgebot::establish_connection;
-use rust_bridgebot::models::*;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+
+fn run_migrations() {
+    let mut conn = establish_connection();
+    conn.run_pending_migrations(MIGRATIONS).unwrap();
+}
+
+use discord_bridgebot::establish_connection;
+use discord_bridgebot::models::*;
 
 extern crate env_logger;
 #[macro_use]
@@ -99,7 +108,7 @@ fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result:
     let connection = &mut establish_connection();
 
     debug!("[-] db query for channel id {}", channel_id);
-    use rust_bridgebot::schema::channel_pairs::dsl::*;
+    use discord_bridgebot::schema::channel_pairs::dsl::*;
 
     // this works
     let results = channel_pairs
@@ -128,17 +137,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     debug!("[+] config loaded!");
 
-    // we don't actually pass this around ..?
-    //let connection = &mut establish_connection();
-    //println!("{:?}", connection);
+    // perform migrations
+    run_migrations();
 
-    let framework = StandardFramework::new()
-        .group(&GENERAL_GROUP);
+    let framework = StandardFramework::new().group(&GENERAL_GROUP);
 
-    framework.configure(
-        Configuration::new().with_whitespace(true)
-            .prefix("!")
-    );
+    framework.configure(Configuration::new().with_whitespace(true).prefix("!"));
 
     // Login with a bot token from the environment
     let token = env::var("DISCORD_TOKEN").expect("token");
@@ -186,7 +190,7 @@ async fn getcurrentid(ctx: &Context, msg: &Message) -> CommandResult {
 async fn register(ctx: &Context, msg: &Message) -> CommandResult {
     // it seems like limiting the scope of the imports is important?
     // I can definitely break code with name-conflicts by putting this at the top....
-    use rust_bridgebot::schema::channel_pairs;
+    use discord_bridgebot::schema::channel_pairs;
     let connection = &mut establish_connection();
 
     // Extract the text content of the message
@@ -217,7 +221,8 @@ async fn register(ctx: &Context, msg: &Message) -> CommandResult {
     // Get the ID of the channel where the message was sent
     let channel1 = msg.channel_id;
 
-    let channel2_o = serenity::model::id::ChannelId::from( NonZeroU64::new(channel2 as u64).unwrap() );
+    let channel2_o =
+        serenity::model::id::ChannelId::from(NonZeroU64::new(channel2 as u64).unwrap());
 
     // make sure we can see the channel target...
     match ctx.http.get_channel(channel2_o).await {
@@ -260,7 +265,7 @@ async fn mirror_message(
     custom_username: &str,
     message_content: &str,
 ) {
-    let channel = serenity::model::id::ChannelId::from( NonZeroU64::new(channel_id as u64).unwrap() );
+    let channel = serenity::model::id::ChannelId::from(NonZeroU64::new(channel_id as u64).unwrap());
 
     let message = format!("🔊 {}: {}", custom_username, message_content);
 
