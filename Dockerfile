@@ -2,7 +2,7 @@
 FROM rust:1.75 as builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release --package rust_bridgebot
+RUN cargo build --release --package discord_bridgebot
 
 ### stage 2
 # Create a new lightweight image with just the binary
@@ -14,7 +14,7 @@ RUN apt update && apt install -y libpq5
 WORKDIR /app
 
 # Copy the binary from the builder stage to the final image
-COPY --from=builder /app/target/release/rust_bridgebot /app/rust_bridgebot
+COPY --from=builder /app/target/release/discord_bridgebot /app/discord_bridgebot
 
 # Command to run your application
-CMD ["/app/rust_bridgebot"]
+CMD ["/app/discord_bridgebot"]
