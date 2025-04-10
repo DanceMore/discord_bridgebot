@@ -1,4 +1,4 @@
-use serenity::all::Message;
+use serenity::model::id::ChannelId;
 
 use emojis;
 
@@ -28,7 +28,8 @@ pub async fn bridge(
     let channel2 = match channel_id.parse::<i64>() {
         Ok(id) => id,
         Err(_) => {
-            ctx.say("Invalid ChannelID format").await?;
+            let emoji = emojis::get_by_shortcode("warning").unwrap();
+            ctx.say(format!("{} Invalid ChannelID format; expecting `String` containing `Integer` `ChannelID` {}", emoji, emoji)).await?;
             return Ok(());
         }
     };
@@ -42,7 +43,7 @@ pub async fn bridge(
     // Check if trying to bridge the same channel
     if channel1 == channel2_o {
         let emoji = emojis::get_by_shortcode("no_entry").unwrap();
-        ctx.say("You cannot bridge a channel with itself!").await?;
+        ctx.say(format!("{} You cannot bridge a channel with itself! {}", emoji, emoji)).await?;
         return Ok(());
     }
 
@@ -64,8 +65,8 @@ pub async fn bridge(
             }
         },
         Err(_) => {
-            ctx.say(format!("I don't think I can see ChannelID `{}`", channel2))
-                .await?
+            let emoji = emojis::get_by_shortcode("thinking").unwrap();
+            ctx.say(format!("{} I don't think I can see ChannelID `{}` {}", emoji, channel2, emoji)).await?
         }
     };
 
