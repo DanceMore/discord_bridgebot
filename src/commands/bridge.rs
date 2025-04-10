@@ -1,8 +1,3 @@
-use serenity::all::standard::macros::command;
-use serenity::all::standard::CommandResult;
-use serenity::all::CommandOptionType;
-use serenity::all::CreateCommand;
-use serenity::all::CreateCommandOption;
 use serenity::all::Message;
 
 use discord_bridgebot::establish_connection;

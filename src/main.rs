@@ -3,16 +3,9 @@ use std::env;
 use std::num::NonZeroU64;
 use tokio;
 
-use serenity::all::Command;
-use serenity::all::CreateInteractionResponse;
-use serenity::all::CreateInteractionResponseMessage;
-use serenity::all::Interaction;
 use serenity::all::Ready;
-
 use serenity::client::EventHandler;
-use serenity::framework::standard::StandardFramework;
 use serenity::Client;
-
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
