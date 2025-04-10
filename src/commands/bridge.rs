@@ -62,8 +62,18 @@ pub async fn bridge(
                 .values(&new_pair)
                 .execute(connection)
             {
-                Ok(_) => ctx.say("Registration successful").await?,
-                Err(_) => ctx.say("Error registering the ChannelID").await?,
+                Ok(_) => {
+                    info!("[+] new ChannelPair registration for ChannelID {}", channel1);
+                    let emoji = emojis::get_by_shortcode("white_check_mark").unwrap();
+                    ctx.say(format!("{} Successfully registered `{}` => `{}`, ensure other direction is also registered. {}", emoji, channel1.get(), channel2_o.get(), emoji)).await?;
+                    return Ok(());
+                }
+                Err(_) => {
+                    error!("[!] INSERT failure into ChannelPairs table");
+                    let emoji = emojis::get_by_shortcode("x").unwrap();
+                    ctx.say(format!("{} Error registering the ChannelID, notify an administrator. {}", emoji, emoji)).await?;
+                    return Ok(());
+                }
             }
         }
         Err(_) => {
