@@ -44,7 +44,11 @@ pub async fn bridge(
     // Check if trying to bridge the same channel
     if channel1 == channel2_o {
         let emoji = emojis::get_by_shortcode("no_entry").unwrap();
-        ctx.say(format!("{} You cannot bridge a channel with itself! {}", emoji, emoji)).await?;
+        ctx.say(format!(
+            "{} You cannot bridge a channel with itself! {}",
+            emoji, emoji
+        ))
+        .await?;
         return Ok(());
     }
 
@@ -60,14 +64,19 @@ pub async fn bridge(
 
             match diesel::insert_into(channel_pairs::table)
                 .values(&new_pair)
-                .execute(connection) {
+                .execute(connection)
+            {
                 Ok(_) => ctx.say("Registration successful").await?,
                 Err(_) => ctx.say("Error registering the ChannelID").await?,
             }
-        },
+        }
         Err(_) => {
             let emoji = emojis::get_by_shortcode("thinking").unwrap();
-            ctx.say(format!("{} I don't think I can see ChannelID `{}` {}", emoji, channel2, emoji)).await?
+            ctx.say(format!(
+                "{} I don't think I can see ChannelID `{}` {}",
+                emoji, channel2, emoji
+            ))
+            .await?
         }
     };
 

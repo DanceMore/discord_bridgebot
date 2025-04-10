@@ -4,11 +4,11 @@ use std::num::NonZeroU64;
 use tokio;
 
 use serenity::all::Ready;
-use serenity::client::EventHandler;
-use serenity::Client;
 use serenity::async_trait;
+use serenity::client::EventHandler;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+use serenity::Client;
 
 use crate::commands::bridge::bridge;
 use crate::commands::unbridge_all::unbridge_all;

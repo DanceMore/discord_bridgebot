@@ -23,7 +23,7 @@ pub struct InsertableChannelPair {
 
 impl InsertableChannelPair {
     pub fn new(channel1: i64, channel2: i64) -> Self {
-        InsertableChannelPair{
+        InsertableChannelPair {
             id: None,
             channel1,
             channel2,
