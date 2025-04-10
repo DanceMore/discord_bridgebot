@@ -11,16 +11,13 @@ use std::num::NonZeroU64;
 
 use diesel::RunQueryDsl;
 
-use poise::serenity_prelude as serenity;
 use crate::Data;
+use poise::serenity_prelude as serenity;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-#[poise::command(
-    slash_command,
-    prefix_command,
-)]
+#[poise::command(slash_command, prefix_command)]
 pub async fn bridge(
     ctx: Context<'_>,
     #[description = "the target channel for the bridge"] channel_id: String,

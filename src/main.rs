@@ -9,7 +9,7 @@ use serenity::all::CreateInteractionResponseMessage;
 use serenity::all::Interaction;
 use serenity::all::Ready;
 
-use serenity::client::{EventHandler};
+use serenity::client::EventHandler;
 use serenity::framework::standard::StandardFramework;
 use serenity::Client;
 
