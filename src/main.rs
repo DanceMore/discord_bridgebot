@@ -3,13 +3,14 @@ use std::env;
 use std::num::NonZeroU64;
 use tokio;
 
-use serenity::all::standard::Configuration;
+use serenity::all::Command;
+use serenity::all::CreateInteractionResponse;
+use serenity::all::CreateInteractionResponseMessage;
+use serenity::all::Interaction;
+use serenity::all::Ready;
 
 use serenity::client::{Context, EventHandler};
-use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::CommandResult;
 use serenity::framework::standard::StandardFramework;
-use serenity::model::gateway::Ready;
 use serenity::Client;
 
 use serenity::async_trait;
@@ -30,20 +31,58 @@ fn run_migrations() {
 }
 
 use discord_bridgebot::establish_connection;
-use discord_bridgebot::models::*;
 
 extern crate env_logger;
 #[macro_use]
 extern crate log;
 
-#[group]
-#[commands(ping, getcurrentid, register)]
-struct General;
+mod commands;
 
 struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            println!("[-] inside handler");
+            let content = match command.data.name.as_str() {
+                "bridge" => {
+                    if let Some(guild_id) = command.guild_id {
+                        if let Some(guild) = guild_id.to_guild_cached(&ctx) {
+                            // Now you can work with the `guild` object as expected.
+                            info!("{:?} attempted to use a command...", command.user.id);
+                            let guild_owner_id = guild.owner_id;
+
+                            if command.user.id == guild_owner_id {
+                                info!("{:?} appears to be a Guild Owner", guild.owner_id);
+                                "I would register now (not implemented still)".to_string()
+                            //		commands::bridge::run(&ctx, command.data.message, &command.data.options);
+                            } else {
+                                "You are not the server owner.".to_string()
+                            }
+                        } else {
+                            "Server owner not found.".to_string()
+                        }
+                    } else {
+                        "Failed to get guild information.".to_string()
+                    }
+                }
+                _ => "not implemented :(".to_string(),
+            };
+
+	    // TODO: irrefutable_let_patterns, I think all my returns in this need wrapped in Some()
+	    // see also: https://github.com/serenity-rs/serenity/blob/current/examples/e14_slash_commands/src/main.rs
+            if let content = content {
+                let data = CreateInteractionResponseMessage::new().content(content);
+                let builder = CreateInteractionResponse::Message(data);
+                if let Err(why) = command.create_response(&ctx.http, builder).await {
+                    println!("[!] Cannot respond to slash command: {}", why);
+                }
+            }
+        }
+    }
+
+    // THE MAIN BRIDGE CHAT FUNCTION
     async fn message(&self, ctx: Context, msg: Message) {
         // fast-fail to prevent spamming / looping
         if msg.author.bot {
@@ -98,10 +137,13 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn ready(&self, _: Context, ready: Ready) {
+    // ready up, battle bus is here ...
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        info!("attempting to register slash command for bridgebot::bridge");
+        let _ = Command::create_global_command(&ctx, commands::bridge::register()).await;
         info!("Bot is ready as {}!", ready.user.name);
     }
-}
+} // end EventHandler
 
 //fn get_channel_pairs(channel_id: i64) -> Result<Vec<ChannelPair>, Box<dyn std::error::Error>> {
 fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result::Error> {
@@ -140,9 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // perform migrations
     run_migrations();
 
-    let framework = StandardFramework::new().group(&GENERAL_GROUP);
-
-    framework.configure(Configuration::new().with_whitespace(true).prefix("!"));
+    let framework = StandardFramework::new();
 
     // Login with a bot token from the environment
     let token = env::var("DISCORD_TOKEN").expect("token");
@@ -156,104 +196,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // start listening for events by starting a single shard
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
-    }
-
-    Ok(())
-}
-
-#[command]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    println!("[-] someone pinged me, ponging...");
-    let channel_id = msg.channel_id;
-
-    let _ = get_channel_pairs(channel_id.into());
-
-    msg.reply(ctx, "Pong!").await?;
-    Ok(())
-}
-
-#[command]
-async fn getcurrentid(ctx: &Context, msg: &Message) -> CommandResult {
-    println!("[-] current channel ID has been requested.");
-    let channel_id = msg.channel_id;
-
-    msg.reply(
-        ctx,
-        format!("The `ChannelID` of this channel is: `{}`", channel_id),
-    )
-    .await?;
-
-    Ok(())
-}
-
-#[command]
-async fn register(ctx: &Context, msg: &Message) -> CommandResult {
-    // it seems like limiting the scope of the imports is important?
-    // I can definitely break code with name-conflicts by putting this at the top....
-    use discord_bridgebot::schema::channel_pairs;
-    let connection = &mut establish_connection();
-
-    // Extract the text content of the message
-    let mut iter = msg.content.split_whitespace();
-    let _ = iter.next(); // Skip the command (!register)
-
-    // Get the second element (Channel ID)
-    let channel_id_str = iter.next();
-
-    // Declare channel2 outside the block
-    let channel2: i64;
-
-    // check that we have a Channel ID
-    if let Some(channel_id_str) = channel_id_str {
-        // Attempt to parse the text as an i64
-        channel2 = match channel_id_str.parse() {
-            Ok(id) => id,
-            Err(_) => {
-                msg.reply(ctx, "Invalid ChannelID format").await?;
-                return Ok(());
-            }
-        };
-    } else {
-        msg.reply(ctx, "Invalid register command format").await?;
-        return Ok(());
-    }
-
-    // Get the ID of the channel where the message was sent
-    let channel1 = msg.channel_id;
-
-    let channel2_o =
-        serenity::model::id::ChannelId::from(NonZeroU64::new(channel2 as u64).unwrap());
-
-    // make sure we can see the channel target...
-    match ctx.http.get_channel(channel2_o).await {
-        Ok(_channel) => {
-            // alright, since we're here, let's create and save the channel to datbase.
-            let new_pair = ChannelPair {
-                id: None, // Omitting the id because it's auto-incremented
-                channel1: channel1.into(),
-                channel2: channel2,
-            };
-
-            let result = diesel::insert_into(channel_pairs::table)
-                .values(&new_pair)
-                .execute(connection);
-
-            match result {
-                Ok(_) => {
-                    msg.reply(ctx, "Registration successful").await?;
-                }
-                Err(_) => {
-                    msg.reply(ctx, "Error registering the ChannelID").await?;
-                }
-            }
-        }
-        Err(_) => {
-            msg.reply(
-                ctx,
-                format!("I don't think I can see ChannelID `{}`", channel2),
-            )
-            .await?;
-        }
     }
 
     Ok(())
