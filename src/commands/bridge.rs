@@ -1,5 +1,7 @@
 use serenity::all::Message;
 
+use emojis;
+
 use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::*;
 use std::num::NonZeroU64;
@@ -17,7 +19,7 @@ pub async fn bridge(
     ctx: Context<'_>,
     #[description = "the target channel for the bridge"] channel_id: String,
 ) -> Result<(), Error> {
-    println!("[-] inside bridge registration");
+    debug!("[-] inside bridge registration");
 
     use discord_bridgebot::schema::channel_pairs;
     let connection = &mut establish_connection();
@@ -36,6 +38,13 @@ pub async fn bridge(
 
     // Convert to Serenity's ChannelId type
     let channel2_o = serenity::ChannelId::from(NonZeroU64::new(channel2 as u64).unwrap());
+
+    // Check if trying to bridge the same channel
+    if channel1 == channel2_o {
+        let emoji = emojis::get_by_shortcode("no_entry").unwrap();
+        ctx.say("You cannot bridge a channel with itself!").await?;
+        return Ok(());
+    }
 
     // Check if we can access the target channel
     match ctx.http().get_channel(channel2_o).await {
