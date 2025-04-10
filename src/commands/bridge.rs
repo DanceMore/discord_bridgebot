@@ -51,7 +51,7 @@ pub async fn bridge(
     match ctx.http().get_channel(channel2_o).await {
         Ok(_) => {
             // Create and save the new channel pair to the database
-            let new_pair = ChannelPair {
+            let new_pair = InsertableChannelPair {
                 id: None,
                 channel1: channel1.into(),
                 channel2: channel2,
