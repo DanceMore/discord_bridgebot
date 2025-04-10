@@ -10,6 +10,7 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::Client;
 
+mod commands;
 use crate::commands::bridge::bridge;
 use crate::commands::unbridge_all::unbridge_all;
 
@@ -32,10 +33,58 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 
-mod commands;
+// this data is used everywhere, somehow
+struct Data {} // User data, which is stored and accessible in all command invocations
+#[allow(dead_code)]
+type Error = Box<dyn std::error::Error + Send + Sync>;
+#[allow(dead_code)]
+type Context<'a> = poise::Context<'a, Data, Error>;
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+    debug!("[-] hello, world, from Rust BridgeBot.");
+    debug!("[-] loading config from ENV...");
+    dotenv().ok();
+    debug!("[+] config loaded!");
+
+    // perform migrations
+    run_migrations();
+
+    // Login with a bot token from the environment
+    let token = env::var("DISCORD_TOKEN").expect("token");
+    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
+
+    debug!("[-] building Framework object...");
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![bridge(), unbridge_all()],
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data {})
+            })
+        })
+        .build();
+
+    let mut client = Client::builder(token, intents)
+        .event_handler(Handler)
+        .framework(framework)
+        .await
+        .expect("Error creating client");
+
+    // start listening for events by starting a single shard
+    if let Err(why) = client.start().await {
+        println!("An error occurred while running the client: {:?}", why);
+    }
+
+    Ok(())
+}
+
+// the main MEAT 
 struct Handler;
-
 #[async_trait]
 impl EventHandler for Handler {
     // THE MAIN BRIDGE CHAT FUNCTION
@@ -94,13 +143,12 @@ impl EventHandler for Handler {
     }
 
     // ready up, battle bus is here ...
-    async fn ready(&self, ctx: poise::serenity_prelude::Context, ready: Ready) {
-        //info!("attempting to register slash command for bridgebot::bridge");
-        //let _ = Command::create_global_command(&ctx, commands::bridge::register()).await;
+    async fn ready(&self, _ctx: poise::serenity_prelude::Context, ready: Ready) {
         info!("Bot is ready as {}!", ready.user.name);
     }
 } // end EventHandler
 
+// TODO: improve this??
 //fn get_channel_pairs(channel_id: i64) -> Result<Vec<ChannelPair>, Box<dyn std::error::Error>> {
 fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result::Error> {
     let connection = &mut establish_connection();
@@ -125,54 +173,6 @@ fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result:
     //     .select((channel1, channel2)) // Select the columns you need
     //     .filter(channel1.eq(channel_id))
     //     .load::<ChannelPair>(&mut connection)?;
-}
-
-// this data is used everywhere, somehow
-struct Data {} // User data, which is stored and accessible in all command invocations
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
-    debug!("[-] hello, world, from Rust BridgeBot.");
-    debug!("[-] loading config from ENV...");
-    dotenv().ok();
-    debug!("[+] config loaded!");
-
-    // perform migrations
-    run_migrations();
-
-    // Login with a bot token from the environment
-    let token = env::var("DISCORD_TOKEN").expect("token");
-    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
-
-    debug!("[-] building Framework object...");
-    let framework = poise::Framework::builder()
-        .options(poise::FrameworkOptions {
-            commands: vec![bridge(), unbridge_all()],
-            ..Default::default()
-        })
-        .setup(|ctx, _ready, framework| {
-            Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
-            })
-        })
-        .build();
-
-    let mut client = Client::builder(token, intents)
-        .event_handler(Handler)
-        .framework(framework)
-        .await
-        .expect("Error creating client");
-
-    // start listening for events by starting a single shard
-    if let Err(why) = client.start().await {
-        println!("An error occurred while running the client: {:?}", why);
-    }
-
-    Ok(())
 }
 
 async fn mirror_message(

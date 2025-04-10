@@ -1,7 +1,6 @@
 use emojis;
-use poise::serenity_prelude as serenity;
 
-use diesel::{query_dsl::methods::LimitDsl, ExpressionMethods, QueryDsl, SelectableHelper};
+use diesel::{ExpressionMethods, QueryDsl};
 use diesel::{BoolExpressionMethods, RunQueryDsl};
 
 use discord_bridgebot::{establish_connection, models::ChannelPair};
