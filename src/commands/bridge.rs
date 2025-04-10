@@ -37,28 +37,28 @@ pub async fn bridge(
     // Convert to Serenity's ChannelId type
     let channel2_o = serenity::ChannelId::from(NonZeroU64::new(channel2 as u64).unwrap());
 
-    //// Check if we can access the target channel
-    //match ctx.http().get_channel(channel2_o).await {
-    //    Ok(_) => {
-    //        // Create and save the new channel pair to the database
-    //        let new_pair = ChannelPair {
-    //            id: None,
-    //            channel1: channel1.into(),
-    //            channel2: channel2,
-    //        };
+    // Check if we can access the target channel
+    match ctx.http().get_channel(channel2_o).await {
+        Ok(_) => {
+            // Create and save the new channel pair to the database
+            let new_pair = ChannelPair {
+                id: None,
+                channel1: channel1.into(),
+                channel2: channel2,
+            };
 
-    //        match diesel::insert_into(channel_pairs::table)
-    //            .values(&new_pair)
-    //            .execute(connection) {
-    //            Ok(_) => ctx.say("Registration successful").await?,
-    //            Err(_) => ctx.say("Error registering the ChannelID").await?,
-    //        }
-    //    },
-    //    Err(_) => {
-    //        ctx.say(format!("I don't think I can see ChannelID `{}`", channel2))
-    //            .await?;
-    //    }
-    //}
+            match diesel::insert_into(channel_pairs::table)
+                .values(&new_pair)
+                .execute(connection) {
+                Ok(_) => ctx.say("Registration successful").await?,
+                Err(_) => ctx.say("Error registering the ChannelID").await?,
+            }
+        },
+        Err(_) => {
+            ctx.say(format!("I don't think I can see ChannelID `{}`", channel2))
+                .await?
+        }
+    };
 
     Ok(())
 }
