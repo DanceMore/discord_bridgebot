@@ -11,6 +11,7 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 use crate::commands::bridge::bridge;
+use crate::commands::unbridge_all::unbridge_all;
 
 use diesel::ExpressionMethods;
 use diesel::QueryDsl;
@@ -94,7 +95,7 @@ impl EventHandler for Handler {
 
     // ready up, battle bus is here ...
     async fn ready(&self, ctx: poise::serenity_prelude::Context, ready: Ready) {
-        info!("attempting to register slash command for bridgebot::bridge");
+        //info!("attempting to register slash command for bridgebot::bridge");
         //let _ = Command::create_global_command(&ctx, commands::bridge::register()).await;
         info!("Bot is ready as {}!", ready.user.name);
     }
@@ -149,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     debug!("[-] building Framework object...");
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![bridge()],
+            commands: vec![bridge(), unbridge_all()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

@@ -14,14 +14,15 @@ use poise::serenity_prelude as serenity;
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-#[poise::command(slash_command, prefix_command)]
+use discord_bridgebot::schema::channel_pairs;
+
+#[poise::command(slash_command, guild_only)]
 pub async fn bridge(
     ctx: Context<'_>,
     #[description = "the target channel for the bridge"] channel_id: String,
 ) -> Result<(), Error> {
     debug!("[-] inside bridge registration");
 
-    use discord_bridgebot::schema::channel_pairs;
     let connection = &mut establish_connection();
 
     // Attempt to parse the provided channel ID
