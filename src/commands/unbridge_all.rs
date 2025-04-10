@@ -1,20 +1,12 @@
-//use diesel::query_dsl::methods::FilterDsl;
-//use diesel::SelectableHelper;
-//use discord_bridgebot::schema::channel_pairs::channel1;
-//use serenity::model::id::ChannelId;
-
 use emojis;
-
-use discord_bridgebot::{establish_connection, models::ChannelPair};
-//use discord_bridgebot::models::*;
-//use std::num::NonZeroU64;
+use poise::serenity_prelude as serenity;
 
 use diesel::{query_dsl::methods::LimitDsl, ExpressionMethods, QueryDsl, SelectableHelper};
 use diesel::{BoolExpressionMethods, RunQueryDsl};
 
-use crate::Data;
-use poise::serenity_prelude as serenity;
+use discord_bridgebot::{establish_connection, models::ChannelPair};
 
+use crate::Data;
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 

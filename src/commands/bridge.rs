@@ -1,20 +1,16 @@
-use serenity::model::id::ChannelId;
-
 use emojis;
-
-use discord_bridgebot::establish_connection;
-use discord_bridgebot::models::*;
 use std::num::NonZeroU64;
+use poise::serenity_prelude as serenity;
 
 use diesel::RunQueryDsl;
 
-use crate::Data;
-use poise::serenity_prelude as serenity;
+use discord_bridgebot::establish_connection;
+use discord_bridgebot::models::*;
+use discord_bridgebot::schema::channel_pairs;
 
+use crate::Data;
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-
-use discord_bridgebot::schema::channel_pairs;
 
 #[poise::command(slash_command, guild_only)]
 pub async fn bridge(
