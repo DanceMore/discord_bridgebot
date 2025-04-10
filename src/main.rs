@@ -9,13 +9,15 @@ use serenity::all::CreateInteractionResponseMessage;
 use serenity::all::Interaction;
 use serenity::all::Ready;
 
-use serenity::client::{Context, EventHandler};
+use serenity::client::{EventHandler};
 use serenity::framework::standard::StandardFramework;
 use serenity::Client;
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+
+use crate::commands::bridge::bridge;
 
 use diesel::ExpressionMethods;
 use diesel::QueryDsl;
@@ -42,48 +44,8 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(command) = interaction {
-            println!("[-] inside handler");
-            let content = match command.data.name.as_str() {
-                "bridge" => {
-                    if let Some(guild_id) = command.guild_id {
-                        if let Some(guild) = guild_id.to_guild_cached(&ctx) {
-                            // Now you can work with the `guild` object as expected.
-                            info!("{:?} attempted to use a command...", command.user.id);
-                            let guild_owner_id = guild.owner_id;
-
-                            if command.user.id == guild_owner_id {
-                                info!("{:?} appears to be a Guild Owner", guild.owner_id);
-                                "I would register now (not implemented still)".to_string()
-                            //		commands::bridge::run(&ctx, command.data.message, &command.data.options);
-                            } else {
-                                "You are not the server owner.".to_string()
-                            }
-                        } else {
-                            "Server owner not found.".to_string()
-                        }
-                    } else {
-                        "Failed to get guild information.".to_string()
-                    }
-                }
-                _ => "not implemented :(".to_string(),
-            };
-
-	    // TODO: irrefutable_let_patterns, I think all my returns in this need wrapped in Some()
-	    // see also: https://github.com/serenity-rs/serenity/blob/current/examples/e14_slash_commands/src/main.rs
-            if let content = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
-                    println!("[!] Cannot respond to slash command: {}", why);
-                }
-            }
-        }
-    }
-
     // THE MAIN BRIDGE CHAT FUNCTION
-    async fn message(&self, ctx: Context, msg: Message) {
+    async fn message(&self, ctx: poise::serenity_prelude::Context, msg: Message) {
         // fast-fail to prevent spamming / looping
         if msg.author.bot {
             return;
@@ -138,9 +100,9 @@ impl EventHandler for Handler {
     }
 
     // ready up, battle bus is here ...
-    async fn ready(&self, ctx: Context, ready: Ready) {
+    async fn ready(&self, ctx: poise::serenity_prelude::Context, ready: Ready) {
         info!("attempting to register slash command for bridgebot::bridge");
-        let _ = Command::create_global_command(&ctx, commands::bridge::register()).await;
+        //let _ = Command::create_global_command(&ctx, commands::bridge::register()).await;
         info!("Bot is ready as {}!", ready.user.name);
     }
 } // end EventHandler
@@ -171,6 +133,11 @@ fn get_channel_pairs(channel_id: i64) -> Result<Vec<(i64, i64)>, diesel::result:
     //     .load::<ChannelPair>(&mut connection)?;
 }
 
+// this data is used everywhere, somehow
+struct Data {} // User data, which is stored and accessible in all command invocations
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
@@ -182,11 +149,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // perform migrations
     run_migrations();
 
-    let framework = StandardFramework::new();
-
     // Login with a bot token from the environment
     let token = env::var("DISCORD_TOKEN").expect("token");
     let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
+
+    debug!("[-] building Framework object...");
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![bridge()],
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data {})
+            })
+        })
+        .build();
+
     let mut client = Client::builder(token, intents)
         .event_handler(Handler)
         .framework(framework)
@@ -202,7 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn mirror_message(
-    ctx: &Context,
+    ctx: &poise::serenity_prelude::Context,
     channel_id: i64,
     custom_username: &str,
     message_content: &str,

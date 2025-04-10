@@ -5,9 +5,13 @@ edition = "2021"
 
 [dependencies]
 dotenv = "0.15.0"
-serenity = { version = "0.12.0", features = ["framework", "standard_framework"] }
-tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
-diesel = { version = "2.1.4", features = ["postgres"] }
-log = "0.4"
 env_logger = "0.11"
+log = "0.4"
+
+poise = "0.6.1"
+serenity = { version = "0.12.4", features = ["framework", "standard_framework"] }
+tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
+
+# TODO: bump to 2.2.x
+diesel = { version = "2.1.4", features = ["postgres"] } # "chrono", "serde_json"] ..?
 diesel_migrations = "2.1.0"
