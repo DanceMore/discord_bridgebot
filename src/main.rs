@@ -5,7 +5,6 @@ use std::env;
 use std::num::NonZeroU64;
 use tokio;
 
-use serenity::all::Ready;
 use poise::async_trait;
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::ActivityData;
@@ -13,7 +12,7 @@ use poise::serenity_prelude::Client;
 use poise::serenity_prelude::EventHandler;
 use poise::serenity_prelude::GatewayIntents;
 use poise::serenity_prelude::Message;
-
+use serenity::all::Ready;
 
 mod commands;
 use crate::commands::bridge::bridge;
@@ -84,8 +83,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .framework(framework)
         .status(serenity::OnlineStatus::Online)
         .activity(ActivityData::custom(format!(
-            "{} I am a bot, do not talk to me. {}",
-            emoji_bridge, emoji_bridge 
+            "{} building bridges between communities... {}",
+            emoji_bridge, emoji_bridge
         )))
         .await
         .expect("Error creating client");

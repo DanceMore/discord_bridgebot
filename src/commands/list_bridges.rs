@@ -42,12 +42,36 @@ pub async fn list_bridges(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     }
 
-    for pair in results {
-                ctx.say(format!(
-                    "Channel ID `{}` => Channel ID `{}`",
-                    pair.channel1, pair.channel2
-                ))
-                .await?;
+    let emoji_bridge = emojis::get_by_shortcode("bridge_at_night").unwrap();
+    let mut message = format!(
+        "{} Bridges for Channel ID `{}`:\n",
+        emoji_bridge, current_channel_id
+    );
+
+    for pair in &results {
+        let chan1 = if pair.channel1 == current_channel_id {
+            format!("`{}`!", pair.channel1)
+        } else {
+            format!("`{}`", pair.channel1)
+        };
+
+        let chan2 = if pair.channel2 == current_channel_id {
+            format!("`{}`!", pair.channel2)
+        } else {
+            format!("`{}`", pair.channel2)
+        };
+
+        message.push_str(&format!("- Channel ID {} => Channel ID {}\n", chan1, chan2));
+    }
+
+    // Discord messages are capped to 2000 characters.
+    if message.len() > 2000 {
+        for chunk in message.as_bytes().chunks(1900) {
+            let chunk_str = String::from_utf8_lossy(chunk);
+            ctx.say(chunk_str).await?;
+        }
+    } else {
+        ctx.say(message).await?;
     }
 
     Ok(())
