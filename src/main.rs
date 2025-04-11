@@ -134,9 +134,10 @@ impl EventHandler for Handler {
                 return;
             }
 
+            info!("[!] mirroring a message {} times", pairs.len());
             for pair in &pairs {
                 debug!(
-                    "[!] would mirror \"{}: {}\" to channel id {}",
+                    "[.] will mirror \"{}: {}\" to channel id {}",
                     padded_author, padded_message, pair.1
                 );
                 mirror_message(&ctx, pair.1, author, message).await;
@@ -148,7 +149,7 @@ impl EventHandler for Handler {
 
     // ready up, battle bus is here ...
     async fn ready(&self, _ctx: poise::serenity_prelude::Context, ready: Ready) {
-        info!("Bot is ready as {}!", ready.user.name);
+        info!("[!] Bot is ready as {}!", ready.user.name);
     }
 } // end EventHandler
 
