@@ -15,7 +15,6 @@ use poise::serenity_prelude::ChannelId;
 
 #[poise::command(
     slash_command,
-    owners_only,
     check = is_guild_owner,
     description_localized("en-US", "delete all registrations related to current channel")
 )]
@@ -86,7 +85,7 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
                     "{} Successfully unbridged Channel ID {} => Channel ID {}\n",
                     emoji, chan1, chan2
                 ));
-                other_channel.say(ctx, format!("{} Guild Owner of Channel ID `{}` initiated an unbridge.", emoji_warning, current_channel_id)).await?;
+                other_channel.say(ctx, format!("{} Owner of Channel ID `{}` initiated an unbridge.\nThis cannot be cancelled.", emoji_warning, current_channel_id)).await?;
             }
             Err(_) => {
                 let emoji = emojis::get_by_shortcode("x").unwrap();

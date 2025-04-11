@@ -10,7 +10,7 @@ use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::ChannelPair;
 use discord_bridgebot::schema::channel_pairs::dsl::*;
 
-#[poise::command(slash_command, check=is_guild_owner, description_localized("en-US", "list all bridges related to the current channel"))]
+#[poise::command(slash_command, ephemeral=true, description_localized("en-US", "list all bridges related to the current channel"))]
 pub async fn list_bridges(ctx: Context<'_>) -> Result<(), Error> {
     debug!("[-] inside list_bridges");
 
