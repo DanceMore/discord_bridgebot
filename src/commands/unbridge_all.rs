@@ -10,7 +10,12 @@ use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::ChannelPair;
 use discord_bridgebot::schema::channel_pairs::dsl::*;
 
-#[poise::command(slash_command, owners_only, check=is_guild_owner, description_localized("en-US", "delete all registrations related to current channel"))]
+#[poise::command(
+    slash_command,
+    owners_only,
+    check = is_guild_owner,
+    description_localized("en-US", "delete all registrations related to current channel")
+)]
 pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
     debug!("[-] inside unbridge_all");
 
@@ -48,38 +53,51 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     }
 
+    let mut message = format!(
+        "Attempting to unbridge all connections related to Channel ID `{}`:\n\n",
+        current_channel_id
+    );
+
     for pair in results {
-        // Delete each pair
+        let chan1 = if pair.channel1 == current_channel_id {
+            format!("`{}`!", pair.channel1)
+        } else {
+            format!("`{}`", pair.channel1)
+        };
+
+        let chan2 = if pair.channel2 == current_channel_id {
+            format!("`{}`!", pair.channel2)
+        } else {
+            format!("`{}`", pair.channel2)
+        };
+
         match diesel::delete(channel_pairs.filter(id.eq(pair.id))).execute(connection) {
             Ok(_) => {
                 let emoji = emojis::get_by_shortcode("boom").unwrap();
-                ctx.say(format!(
-                    "{} Successfully unbridged Channel ID `{}` from Channel ID `{}`",
-                    emoji, pair.channel1, pair.channel2
-                ))
-                .await?;
+                message.push_str(&format!(
+                    "{} Successfully unbridged Channel ID {} => Channel ID {}\n",
+                    emoji, chan1, chan2
+                ));
             }
             Err(_) => {
                 let emoji = emojis::get_by_shortcode("x").unwrap();
                 error!("[!] error deleting ChannelPair Object ID {}", pair.id);
-                ctx.say(format!(
-                    "{} Error unbridging the Channel ID `{}` from Channel ID `{}`, notify an administrator.",
-                    emoji, pair.channel1, pair.channel2
-                ))
-                .await?;
+                message.push_str(&format!(
+                    "{} Error unbridging Channel ID {} => Channel ID {}, notify an administrator.\n",
+                    emoji, chan1, chan2
+                ));
             }
         }
     }
-    //        },
-    //        Ok(_) => {
-    //            let emoji = emojis::get_by_shortcode("thinking").unwrap();
-    //            ctx.say(format!("{} No bridges found for this channel", emoji)).await?;
-    //        },
-    //        Err(_) => {
-    //            let emoji = emojis::get_by_shortcode("thinking").unwrap();
-    //            ctx.say(format!("{} Error accessing the bridge data", emoji)).await?;
-    //        }
-    //    };
+
+    if message.len() > 2000 {
+        for chunk in message.as_bytes().chunks(1900) {
+            let chunk_str = String::from_utf8_lossy(chunk);
+            ctx.say(chunk_str).await?;
+        }
+    } else {
+        ctx.say(message).await?;
+    }
 
     Ok(())
 }

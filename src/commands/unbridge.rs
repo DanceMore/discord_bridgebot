@@ -70,8 +70,8 @@ pub async fn unbridge(
     if results.is_empty() {
         let emoji = emojis::get_by_shortcode("interrobang").unwrap();
         ctx.say(format!(
-            "{} No bridges found for `this` current channelID `{}` {}",
-            emoji, channel1_oid, emoji
+            "{} No bridges found for `this` current Channel ID `{}` => `{}`",
+            emoji, channel1_oid, channel2_oid
         ))
         .await?;
         return Ok(());
