@@ -3,12 +3,12 @@ use emojis;
 use diesel::{BoolExpressionMethods, RunQueryDsl};
 use diesel::{ExpressionMethods, QueryDsl};
 
-use discord_bridgebot::establish_connection;
 use discord_bridgebot::checks::is_guild_owner;
-use discord_bridgebot::models::ChannelPair;
-use discord_bridgebot::schema::channel_pairs::dsl::*;
 #[allow(unused_imports)]
 use discord_bridgebot::data::{Context, Data, Error};
+use discord_bridgebot::establish_connection;
+use discord_bridgebot::models::ChannelPair;
+use discord_bridgebot::schema::channel_pairs::dsl::*;
 
 #[poise::command(slash_command, owners_only, check=is_guild_owner, description_localized("en-US", "delete all registrations related to current channel"))]
 pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {

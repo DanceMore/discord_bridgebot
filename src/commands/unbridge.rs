@@ -1,14 +1,14 @@
 use emojis;
-use std::num::NonZeroU64;
 use poise::serenity_prelude as serenity;
+use std::num::NonZeroU64;
 
-use discord_bridgebot::establish_connection;
 use discord_bridgebot::checks::is_guild_owner;
+#[allow(unused_imports)]
+use discord_bridgebot::data::{Context, Data, Error};
+use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::ChannelPair;
 use discord_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 use discord_bridgebot::schema::channel_pairs::*;
-#[allow(unused_imports)]
-use discord_bridgebot::data::{Context, Data, Error};
 
 use diesel::BoolExpressionMethods;
 use diesel::ExpressionMethods;
