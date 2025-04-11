@@ -8,6 +8,8 @@ use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::*;
 use discord_bridgebot::schema::channel_pairs;
 use discord_bridgebot::checks::is_guild_owner;
+
+#[allow(unused_imports)]
 use discord_bridgebot::data::{Context, Data, Error};
 
 #[poise::command(slash_command, guild_only, check=is_guild_owner)]
