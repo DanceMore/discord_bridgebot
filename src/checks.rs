@@ -7,7 +7,7 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 // therefore no DM handling logic ;)
 pub async fn is_guild_owner(ctx: Context<'_>) -> Result<bool, Error> {
     info!("[?] checking for Guild Ownership...");
-    // Ensure the command is being run in a guild (not a DM)A
+    // Ensure the command is being run in a guild (not a DM)
     if let Some(guild_id) = ctx.guild() {
         // Get the guild's owner ID
         let owner_id = guild_id.owner_id;
