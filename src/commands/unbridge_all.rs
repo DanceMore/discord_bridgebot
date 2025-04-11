@@ -4,6 +4,7 @@ use diesel::{BoolExpressionMethods, RunQueryDsl};
 use diesel::{ExpressionMethods, QueryDsl};
 
 use discord_bridgebot::{establish_connection, models::ChannelPair};
+use discord_bridgebot::schema::channel_pairs::dsl::*;
 
 use crate::Data;
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -16,7 +17,6 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
     debug!("[-] inside unbridge_all registration");
 
     //use discord_bridgebot::schema::channel_pairs;
-    use discord_bridgebot::schema::channel_pairs::dsl::*;
     let connection = &mut establish_connection();
 
     // Get the current channel ID
