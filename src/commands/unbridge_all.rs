@@ -61,9 +61,9 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
             }
             Err(_) => {
                 let emoji = emojis::get_by_shortcode("x").unwrap();
-                warn!("[!] error deleting ChannelPair Object ID {}", pair.id);
+                error!("[!] error deleting ChannelPair Object ID {}", pair.id);
                 ctx.say(format!(
-                    "{} Error unbridging the Channel ID `{}` from Channel ID `{}`",
+                    "{} Error unbridging the Channel ID `{}` from Channel ID `{}`, notify an administrator.",
                     emoji, pair.channel1, pair.channel2
                 ))
                 .await?;

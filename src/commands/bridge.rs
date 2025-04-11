@@ -88,8 +88,8 @@ pub async fn bridge(
                     );
                     let emoji = emojis::get_by_shortcode("warning").unwrap();
                     ctx.say(format!(
-                        "{} This channel pair is already registered. Check both directions. {}",
-                        emoji, emoji
+                        "{} This channel pair is already registered. Check the other side? ",
+                        emoji
                     ))
                     .await?;
 
@@ -99,7 +99,7 @@ pub async fn bridge(
                     error!("[!] INSERT failure into ChannelPairs table");
                     let emoji = emojis::get_by_shortcode("x").unwrap();
                     ctx.say(format!(
-                        "{} Error registering the ChannelID, notify an administrator. {}",
+                        "{} Error registering the Channel ID, notify an administrator. {}",
                         emoji, emoji
                     ))
                     .await?;
@@ -110,8 +110,8 @@ pub async fn bridge(
         Err(_) => {
             let emoji = emojis::get_by_shortcode("thinking").unwrap();
             ctx.say(format!(
-                "{} I don't think I can see ChannelID `{}` {}",
-                emoji, channel2, emoji
+                "{} I don't think I can see Channel ID `{}`",
+                emoji, channel2
             ))
             .await?
         }

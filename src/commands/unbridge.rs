@@ -83,8 +83,8 @@ pub async fn unbridge(
             Ok(_) => {
                 let emoji = emojis::get_by_shortcode("boom").unwrap();
                 ctx.say(format!(
-                    "{} Successfully unbridged the channels {}",
-                    emoji, emoji
+                    "{} Successfully unbridged Channel ID `{}` => `{}`",
+                    emoji, channel1_oid, channel2_oid
                 ))
                 .await?;
             }
