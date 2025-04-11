@@ -14,6 +14,7 @@ use serenity::Client;
 
 mod commands;
 use crate::commands::bridge::bridge;
+use crate::commands::unbridge::unbridge;
 use crate::commands::unbridge_all::unbridge_all;
 
 use diesel::ExpressionMethods;
@@ -61,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     debug!("[-] building Framework object...");
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![bridge(), unbridge_all()],
+            commands: vec![bridge(), unbridge(), unbridge_all()],
             owners: HashSet::from([UserId::new(898051927206674443)]),
             ..Default::default()
         })
