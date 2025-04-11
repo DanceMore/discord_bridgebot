@@ -1,7 +1,7 @@
 use emojis;
 
-use diesel::{ExpressionMethods, QueryDsl};
 use diesel::{BoolExpressionMethods, RunQueryDsl};
+use diesel::{ExpressionMethods, QueryDsl};
 
 use discord_bridgebot::{establish_connection, models::ChannelPair};
 

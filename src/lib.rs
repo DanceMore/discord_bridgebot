@@ -1,7 +1,7 @@
-pub mod models;
-pub mod schema;
 pub mod checks;
 pub mod data;
+pub mod models;
+pub mod schema;
 //pub mod helpers;
 
 use diesel::pg::PgConnection;

@@ -29,8 +29,8 @@ fn run_migrations() {
     conn.run_pending_migrations(MIGRATIONS).unwrap();
 }
 
-use discord_bridgebot::establish_connection;
 use discord_bridgebot::data::Data;
+use discord_bridgebot::establish_connection;
 
 extern crate env_logger;
 #[macro_use]
@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// the main MEAT 
+// the main MEAT
 struct Handler;
 #[async_trait]
 impl EventHandler for Handler {

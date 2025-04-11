@@ -20,9 +20,11 @@ pub async fn is_guild_owner(ctx: Context<'_>) -> Result<bool, Error> {
     // Return false if the user is not the guild owner or it's a DM
     warn!("[!] user is NOT a guild owner....");
     let emoji = emojis::get_by_shortcode("x").unwrap();
-    let _ = ctx.say(format!(
-        "{} you are not a Guild Owner, please stop. {}",
-        emoji, emoji
-    )).await;
+    let _ = ctx
+        .say(format!(
+            "{} you are not a Guild Owner, please stop. {}",
+            emoji, emoji
+        ))
+        .await;
     Ok(false)
 }

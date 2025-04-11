@@ -1,13 +1,13 @@
 use emojis;
-use std::num::NonZeroU64;
 use poise::serenity_prelude as serenity;
+use std::num::NonZeroU64;
 
 use diesel::RunQueryDsl;
 
+use discord_bridgebot::checks::is_guild_owner;
 use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::*;
 use discord_bridgebot::schema::channel_pairs;
-use discord_bridgebot::checks::is_guild_owner;
 
 #[allow(unused_imports)]
 use discord_bridgebot::data::{Context, Data, Error};
@@ -63,7 +63,10 @@ pub async fn bridge(
                 .execute(connection)
             {
                 Ok(_) => {
-                    info!("[+] new ChannelPair registration for ChannelID {}", channel1);
+                    info!(
+                        "[+] new ChannelPair registration for ChannelID {}",
+                        channel1
+                    );
                     let emoji = emojis::get_by_shortcode("white_check_mark").unwrap();
                     ctx.say(format!("{} Successfully registered `{}` => `{}`, ensure other direction is also registered. {}", emoji, channel1.get(), channel2_o.get(), emoji)).await?;
                     return Ok(());
@@ -71,7 +74,11 @@ pub async fn bridge(
                 Err(_) => {
                     error!("[!] INSERT failure into ChannelPairs table");
                     let emoji = emojis::get_by_shortcode("x").unwrap();
-                    ctx.say(format!("{} Error registering the ChannelID, notify an administrator. {}", emoji, emoji)).await?;
+                    ctx.say(format!(
+                        "{} Error registering the ChannelID, notify an administrator. {}",
+                        emoji, emoji
+                    ))
+                    .await?;
                     return Ok(());
                 }
             }
