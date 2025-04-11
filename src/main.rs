@@ -6,14 +6,18 @@ use std::num::NonZeroU64;
 use tokio;
 
 use serenity::all::Ready;
-use serenity::async_trait;
-use serenity::client::EventHandler;
-use serenity::model::channel::Message;
-use serenity::prelude::*;
-use serenity::Client;
+use poise::async_trait;
+use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::ActivityData;
+use poise::serenity_prelude::Client;
+use poise::serenity_prelude::EventHandler;
+use poise::serenity_prelude::GatewayIntents;
+use poise::serenity_prelude::Message;
+
 
 mod commands;
 use crate::commands::bridge::bridge;
+use crate::commands::list_bridges::list_bridges;
 use crate::commands::unbridge::unbridge;
 use crate::commands::unbridge_all::unbridge_all;
 
@@ -62,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     debug!("[-] building Framework object...");
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![bridge(), unbridge(), unbridge_all()],
+            commands: vec![bridge(), list_bridges(), unbridge(), unbridge_all()],
             owners: HashSet::from([UserId::new(898051927206674443)]),
             ..Default::default()
         })
@@ -74,9 +78,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build();
 
+    let emoji_bridge = emojis::get_by_shortcode("bridge_at_night").unwrap();
     let mut client = Client::builder(token, intents)
         .event_handler(Handler)
         .framework(framework)
+        .status(serenity::OnlineStatus::Online)
+        .activity(ActivityData::custom(format!(
+            "{} I am a bot, do not talk to me. {}",
+            emoji_bridge, emoji_bridge 
+        )))
         .await
         .expect("Error creating client");
 
