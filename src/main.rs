@@ -1,4 +1,6 @@
 use dotenv::dotenv;
+use serenity::all::UserId;
+use std::collections::HashSet;
 use std::env;
 use std::num::NonZeroU64;
 use tokio;
@@ -28,17 +30,18 @@ fn run_migrations() {
 }
 
 use discord_bridgebot::establish_connection;
+use discord_bridgebot::data::Data;
 
 extern crate env_logger;
 #[macro_use]
 extern crate log;
 
 // this data is used everywhere, somehow
-struct Data {} // User data, which is stored and accessible in all command invocations
-#[allow(dead_code)]
-type Error = Box<dyn std::error::Error + Send + Sync>;
-#[allow(dead_code)]
-type Context<'a> = poise::Context<'a, Data, Error>;
+//struct Data {} // User data, which is stored and accessible in all command invocations
+//#[allow(dead_code)]
+//type Error = Box<dyn std::error::Error + Send + Sync>;
+//#[allow(dead_code)]
+//type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -59,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![bridge(), unbridge_all()],
+            owners: HashSet::from([UserId::new(898051927206674443)]),
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

@@ -9,7 +9,9 @@ use crate::Data;
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-#[poise::command(slash_command)]
+use discord_bridgebot::checks::is_guild_owner;
+
+#[poise::command(slash_command, owners_only, check=is_guild_owner)]
 pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
     debug!("[-] inside unbridge_all registration");
 
@@ -35,6 +37,16 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
     println!("{} total results", results.len());
     for each in &results {
         println!("[-] {:?}", each);
+    }
+
+    if results.is_empty() {
+        let emoji = emojis::get_by_shortcode("interrobang").unwrap();
+        ctx.say(format!(
+            "{} No bridges found for `this` current channelID `{}` {}",
+            emoji, current_channel_id, emoji
+        ))
+        .await?;
+        return Ok(());
     }
 
     for pair in results {

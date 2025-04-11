@@ -1,10 +1,19 @@
 pub mod models;
 pub mod schema;
+pub mod checks;
+pub mod data;
+//pub mod helpers;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
+
+use crate::data::Data;
+//#[allow(dead_code)]
+type Error = Box<dyn std::error::Error + Send + Sync>;
+//#[allow(dead_code)]
+type Context<'a> = poise::Context<'a, Data, Error>;
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();

@@ -7,12 +7,10 @@ use diesel::RunQueryDsl;
 use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::*;
 use discord_bridgebot::schema::channel_pairs;
+use discord_bridgebot::checks::is_guild_owner;
+use discord_bridgebot::data::{Context, Data, Error};
 
-use crate::Data;
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
-
-#[poise::command(slash_command, guild_only)]
+#[poise::command(slash_command, guild_only, check=is_guild_owner)]
 pub async fn bridge(
     ctx: Context<'_>,
     #[description = "the target channel for the bridge"] channel_id: String,
