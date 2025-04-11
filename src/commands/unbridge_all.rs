@@ -10,8 +10,8 @@ use discord_bridgebot::establish_connection;
 use discord_bridgebot::models::ChannelPair;
 use discord_bridgebot::schema::channel_pairs::dsl::*;
 
-use std::num::NonZeroU64;
 use poise::serenity_prelude::ChannelId;
+use std::num::NonZeroU64;
 
 #[poise::command(
     slash_command,
@@ -64,8 +64,8 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
         // this logic is ass but it works
         let mut other_channel = ChannelId::from(NonZeroU64::new(pair.channel2 as u64).unwrap());
         let chan1 = if pair.channel1 == current_channel_id {
-             other_channel = ChannelId::from(NonZeroU64::new(pair.channel1 as u64).unwrap());
-             format!("`{}`!", pair.channel1)
+            other_channel = ChannelId::from(NonZeroU64::new(pair.channel1 as u64).unwrap());
+            format!("`{}`!", pair.channel1)
         } else {
             format!("`{}`", pair.channel1)
         };

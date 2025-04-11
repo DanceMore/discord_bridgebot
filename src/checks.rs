@@ -20,13 +20,15 @@ pub async fn is_guild_owner(ctx: Context<'_>) -> Result<bool, Error> {
     // Return false if the user is not the guild owner or it's a DM
     warn!("[!] user is NOT a guild owner....");
     let emoji = emojis::get_by_shortcode("x").unwrap();
-    let _ = ctx.send(poise::CreateReply::default()
-        .content(format!(
-            "{} you are not the Server Owner, please stop. {}",
-            emoji, emoji
-        ))
-        .ephemeral(true)  // <-- 👈 this makes it visible only to the command invoker
-    ).await;
+    let _ = ctx
+        .send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "{} you are not the Server Owner, please stop. {}",
+                    emoji, emoji
+                ))
+                .ephemeral(true), // <-- 👈 this makes it visible only to the command invoker
+        )
+        .await;
     Ok(false)
 }
-
