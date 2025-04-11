@@ -4,14 +4,14 @@ use discord_bridgebot::establish_connection;
 use std::num::NonZeroU64;
 
 use discord_bridgebot::models::ChannelPair;
-use discord_bridgebot::schema::channel_pairs::channel1;
-use discord_bridgebot::schema::channel_pairs::channel2;
+use discord_bridgebot::schema::channel_pairs::*;
 use discord_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 
 use diesel::BoolExpressionMethods;
 use diesel::ExpressionMethods;
 use diesel::QueryDsl;
 use diesel::RunQueryDsl;
+use diesel::associations::HasTable;
 
 use poise::serenity_prelude as serenity;
 
@@ -79,33 +79,27 @@ pub async fn unbridge(
         return Ok(());
     }
 
-    // Attempt to find the pair in the database
-    //let target_pair = diesel::select(channel_pairs::table)
-    //    .filter(channel_pairs::channel1.eq(channel1.into()))
-    //    .filter(channel_pairs::channel2.eq(channel2))
-    //    .first::<ChannelPair>(connection);
-
-    //match target_pair {
-    //    Ok(pair) => {
-    //        // If the pair exists, delete it
-    //        match diesel::delete(channel_pairs::table.filter(channel_pairs::id.eq(pair.id.unwrap())))
-    //            .execute(connection)
-    //        {
-    //            Ok(_) => {
-    //                let emoji = emojis::get_by_shortcode("check_mark").unwrap();
-    //                ctx.say(format!("{} Successfully unbridged the channels {}", emoji, emoji)).await?;
-    //            }
-    //            Err(_) => {
-    //                let emoji = emojis::get_by_shortcode("error").unwrap();
-    //                ctx.say(format!("{} Error unbridging the ChannelID", emoji)).await?;
-    //            }
-    //        }
-    //    },
-    //    Err(_) => {
-    //        let emoji = emojis::get_by_shortcode("thinking").unwrap();
-    //        ctx.say(format!("{} No bridge found for ChannelID `{}` {}", emoji, channel2, emoji)).await?;
-    //    }
-    //};
+    for pair in results {
+            // If the pair exists, delete it
+            match diesel::delete(channel_pairs.filter(id.eq(pair.id)))
+                .execute(connection)
+            {
+                Ok(_) => {
+                    let emoji = emojis::get_by_shortcode("boom").unwrap();
+                    ctx.say(format!("{} Successfully unbridged the channels {}", emoji, emoji)).await?;
+                }
+                Err(_) => {
+                    error!("[!] DELETE failure on ChannelPairs table");
+                    let emoji = emojis::get_by_shortcode("x").unwrap();
+                    ctx.say(format!(
+                        "{} Error deleting the ChannelID, notify an administrator. {}",
+                        emoji, emoji
+                    ))
+                    .await?;
+                    return Ok(());
+                }
+            }
+        }
 
     Ok(())
 }

@@ -3,6 +3,7 @@ use poise::serenity_prelude as serenity;
 use std::num::NonZeroU64;
 
 use diesel::RunQueryDsl;
+use diesel::result::{Error as DieselError, DatabaseErrorKind, DatabaseErrorInformation};
 
 use discord_bridgebot::checks::is_guild_owner;
 use discord_bridgebot::establish_connection;
@@ -68,7 +69,20 @@ pub async fn bridge(
                         channel1
                     );
                     let emoji = emojis::get_by_shortcode("white_check_mark").unwrap();
-                    ctx.say(format!("{} Successfully registered `{}` => `{}`, ensure other direction is also registered. {}", emoji, channel1.get(), channel2_o.get(), emoji)).await?;
+                    ctx.say(format!("{} Successfully registered `{}` => `{}` {}\nensure other direction is also registered.", emoji, channel1.get(), channel2_o.get(), emoji)).await?;
+                    return Ok(());
+                }
+                Err(DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, ref info)) => {
+                    // Optional: use `info.message()` or `info.details()` for better diagnostics
+                    warn!(
+                        "[!] Unique constraint violation while registering channel pair: {}",
+                        info.details().unwrap_or("no details")
+                    );
+                    let emoji = emojis::get_by_shortcode("warning").unwrap();
+                    ctx.say(format!(
+                        "{} This channel pair is already registered. Check both directions. {}",
+                        emoji, emoji
+                    )).await?;
                     return Ok(());
                 }
                 Err(_) => {
