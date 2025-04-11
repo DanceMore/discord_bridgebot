@@ -3,13 +3,20 @@ use emojis;
 use discord_bridgebot::establish_connection;
 use std::num::NonZeroU64;
 
+use discord_bridgebot::models::ChannelPair;
+use discord_bridgebot::schema::channel_pairs::channel1;
+use discord_bridgebot::schema::channel_pairs::channel2;
+use discord_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 
-use crate::Data;
+use diesel::BoolExpressionMethods;
+use diesel::ExpressionMethods;
+use diesel::QueryDsl;
+use diesel::RunQueryDsl;
+
 use poise::serenity_prelude as serenity;
 
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
-
+#[allow(unused_imports)]
+use discord_bridgebot::data::{Context, Data, Error};
 
 #[poise::command(slash_command, guild_only)]
 pub async fn unbridge(
@@ -35,42 +42,42 @@ pub async fn unbridge(
     let channel1_oid = channel1_o.get() as i64;
 
     // Convert to Serenity's ChannelId type
-    let channel2_o = serenity::ChannelId::from(NonZeroU64::new(channel2_id_from_str as u64).unwrap());
+    let channel2_o =
+        serenity::ChannelId::from(NonZeroU64::new(channel2_id_from_str as u64).unwrap());
     let channel2_oid = channel2_o.get() as i64;
 
     // Check if trying to unbridge the same channel
     // TODO: evaluate if this is needed
     if channel1_o == channel2_o {
         let emoji = emojis::get_by_shortcode("no_entry").unwrap();
-        ctx.say(format!("{} You cannot unbridge a channel with itself! {}", emoji, emoji)).await?;
+        ctx.say(format!(
+            "{} You cannot unbridge a channel with itself! {}",
+            emoji, emoji
+        ))
+        .await?;
         return Ok(());
     }
 
-   // let results: Vec<ChannelPair> = channel_pairs
-   // .filter(
-   //     channel1
-   //         .eq(channel1_oid)
-   //         .and(channel2.eq(channel2_oid)),
-   // )
-   // .load(connection)
-   // .expect("error fetching");
+    let results: Vec<ChannelPair> = channel_pairs
+        .filter(channel1.eq(channel1_oid).and(channel2.eq(channel2_oid)))
+        .load(connection)
+        .expect("error fetching");
 
-// Attempt to find all pairs where channel1 is involved
-//println!("{} total results", results.len());
-//for each in &results {
-//    println!("[-] {:?}", each);
-//}
-//
-//if results.is_empty() {
-//    let emoji = emojis::get_by_shortcode("interrobang").unwrap();
-//    ctx.say(format!(
-//        "{} No bridges found for `this` current channelID `{}` {}",
-//        emoji, current_channel_id, emoji
-//    ))
-//    .await?;
-//    return Ok(());
-//}
+    // Attempt to find all pairs where channel1 is involved
+    println!("{} total results", results.len());
+    for each in &results {
+        println!("[-] {:?}", each);
+    }
 
+    if results.is_empty() {
+        let emoji = emojis::get_by_shortcode("interrobang").unwrap();
+        ctx.say(format!(
+            "{} No bridges found for `this` current channelID `{}` {}",
+            emoji, channel1_oid, emoji
+        ))
+        .await?;
+        return Ok(());
+    }
 
     // Attempt to find the pair in the database
     //let target_pair = diesel::select(channel_pairs::table)
