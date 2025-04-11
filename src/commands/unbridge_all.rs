@@ -4,7 +4,6 @@ use diesel::{BoolExpressionMethods, RunQueryDsl};
 use diesel::{ExpressionMethods, QueryDsl};
 
 use discord_bridgebot::{establish_connection, models::ChannelPair};
-use discord_bridgebot::schema::channel_pairs::dsl::*;
 
 use crate::Data;
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -12,11 +11,12 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 use discord_bridgebot::checks::is_guild_owner;
 
-#[poise::command(slash_command, owners_only, check=is_guild_owner)]
+#[poise::command(slash_command, owners_only, check=is_guild_owner, description_localized("en-US", "delete all registrations related to current channel"))]
 pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
-    debug!("[-] inside unbridge_all registration");
+    debug!("[-] inside unbridge_all");
 
     //use discord_bridgebot::schema::channel_pairs;
+    use discord_bridgebot::schema::channel_pairs::dsl::*;
     let connection = &mut establish_connection();
 
     // Get the current channel ID
@@ -34,9 +34,9 @@ pub async fn unbridge_all(ctx: Context<'_>) -> Result<(), Error> {
         .expect("error fetching");
 
     // Attempt to find all pairs where channel1 is involved
-    println!("{} total results", results.len());
+    debug!("[+] {} total results", results.len());
     for each in &results {
-        println!("[-] {:?}", each);
+        debug!("[.] will unbridge => {:?}", each);
     }
 
     if results.is_empty() {
