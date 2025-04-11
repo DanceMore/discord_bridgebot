@@ -74,10 +74,10 @@ pub async fn bridge(
                     );
                     let emoji = emojis::get_by_shortcode("white_check_mark").unwrap();
                     let emoji3 = emojis::get_by_shortcode("loud_sound").unwrap();
-                    ctx.say(format!("{} Successfully registered `{}` => `{}` {}\n\nensure other direction is also registered; or do nothing for a one-way experience {}", emoji, channel1_o.get(), channel2_o.get(), emoji, emoji3)).await?;
+                    ctx.say(format!("{} Successfully registered `{}` => `{}`\n\nensure other direction is also registered; or do nothing for a one-way experience {}", emoji, channel1_o.get(), channel2_o.get(), emoji3)).await?;
 
                     let emoji2 = emojis::get_by_shortcode("warning").unwrap();
-                    channel2_o.say(ctx, format!("{} bridge registration request from `{}` `#{}`\n\nrespond with `/bridge` and ChannelID `{}` to bridge back; or do nothing for a one-way experience {}", emoji2, guild_name, channel1_name, channel1_o, emoji3)).await?;
+                    channel2_o.say(ctx, format!("{} bridge registration request from `{}` `#{}`\n\nrespond with `/bridge` and Channel ID `{}` to bridge back; or do nothing for a one-way experience {}", emoji2, guild_name, channel1_name, channel1_o, emoji3)).await?;
                     return Ok(());
                 }
                 Err(DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, ref info)) => {

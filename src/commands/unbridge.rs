@@ -1,34 +1,32 @@
 use emojis;
+use std::num::NonZeroU64;
+use poise::serenity_prelude as serenity;
 
 use discord_bridgebot::establish_connection;
-use std::num::NonZeroU64;
-
+use discord_bridgebot::checks::is_guild_owner;
 use discord_bridgebot::models::ChannelPair;
 use discord_bridgebot::schema::channel_pairs::dsl::channel_pairs;
 use discord_bridgebot::schema::channel_pairs::*;
+#[allow(unused_imports)]
+use discord_bridgebot::data::{Context, Data, Error};
 
-use diesel::associations::HasTable;
 use diesel::BoolExpressionMethods;
 use diesel::ExpressionMethods;
 use diesel::QueryDsl;
 use diesel::RunQueryDsl;
 
-use poise::serenity_prelude as serenity;
-
-#[allow(unused_imports)]
-use discord_bridgebot::data::{Context, Data, Error};
-
-#[poise::command(slash_command, guild_only)]
+#[poise::command(slash_command, guild_only, check=is_guild_owner, description_localized("en-US", "remove a specific bridge"))]
 pub async fn unbridge(
     ctx: Context<'_>,
-    #[description = "the target channel for the unbridge"] channel_id_str: String,
+    // we MUST leave this as `channel_id` because it shows up client-side...
+    #[description = "the target channel for the unbridge"] channel_id: String,
 ) -> Result<(), Error> {
     debug!("[-] inside unbridge registration");
 
     let connection = &mut establish_connection();
 
     // Attempt to parse the provided channel ID
-    let channel2_id_from_str: i64 = match channel_id_str.parse::<i64>() {
+    let channel2_id_from_str: i64 = match channel_id.parse::<i64>() {
         Ok(channel_id) => channel_id,
         Err(_) => {
             let emoji = emojis::get_by_shortcode("warning").unwrap();
