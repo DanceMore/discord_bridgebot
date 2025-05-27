@@ -10,7 +10,7 @@ log = "0.4"
 
 poise = "0.6.1"
 serenity = { version = "0.12.4", features = ["framework", "standard_framework", "model"] }
-tokio = { version = "1.45.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
 
 # TODO: bump to 2.2.x
 diesel = { version = "2.2.10", features = ["postgres"] } # "chrono", "serde_json"] ..?
