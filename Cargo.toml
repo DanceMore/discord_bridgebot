@@ -13,7 +13,7 @@ serenity = { version = "0.12.4", features = ["framework", "standard_framework", 
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
 
 # TODO: bump to 2.2.x
-diesel = { version = "2.2.10", features = ["postgres"] } # "chrono", "serde_json"] ..?
+diesel = { version = "2.2.11", features = ["postgres"] } # "chrono", "serde_json"] ..?
 diesel_migrations = "2.1.0"
 emojis = "0.6.4"
 emoji = "0.2.1"
