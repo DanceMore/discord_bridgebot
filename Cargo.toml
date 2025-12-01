@@ -14,6 +14,6 @@ tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
 
 # TODO: bump to 2.2.x
 diesel = { version = "2.2.12", features = ["postgres"] } # "chrono", "serde_json"] ..?
-diesel_migrations = "2.1.0"
+diesel_migrations = "2.3.1"
 emojis = "0.7.2"
 emoji = "0.2.1"
